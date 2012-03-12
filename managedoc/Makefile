@@ -1,3 +1,3 @@
 clean:
-	@rm *.pyc
-	@rm docDefDB.db
+	@rm -f *.pyc
+	@rm -f docDefDB.db
