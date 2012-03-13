@@ -1,34 +1,9 @@
 #! /usr/bin/env python
 # encoding: utf-8
-# imports
-import sys, os, string, re, codecs
 
+import sys, os, string, re, codecs, sqlite3
 
-# TODO : gérer les champs qui peuvent être plusieurs ... (genre field :)  )
 # TODO : créer un .log pour que quand ça plante on puisse suivre ce qui se passe
-
-class TablesList:
-	"""
-	Class to deal with textual description of tables.
-
-	Before string are transformed to valid dictionnary.
-	"""
-	def __init__(self):
-		self.tables={}
-	def addTable(self, table, query):
-		if 'name' in table.keys():
-			if table['name'] in self.tables.keys():
-				raise NameError("table '"+tabe['name']+"' is documented several times.")
-			table['query']=query
-			self.tables[table['name']]=table
-		else:
-			errMsg="""
-			A documenting section is found but without name definition."""
-			if len(table.keys()) > 0:
-				errMsg=errMsg+"""(first field is : """+table.keys()[0]+": "+table.values()[0]+")"
-			raise NameError(errMsg)
-
-
 
 class DataBase:
 	"""
@@ -55,12 +30,14 @@ class DataBase:
 		
 		# read every tables from every files
 
-		self.tablesDoc = TablesList()
+		self.tablesDoc = []
 		for file in files:
-			self.tablesDoc = self.readTables(file, self.tablesDoc)
-		# interpretaion de la doc
-		# complétion des inheritances
+			self.tablesDoc=self.readTables(file, self.tablesDoc)
 
+		# format tablesDoc accordingly with what is in tablesDoc
+		self.tablesDoc = [TableDoc(description) for in self.tablesDoc]
+
+		# complétion des inheritances mais avant de faire ça, il faudra faire du parsing de requete...
 
 	def readTables(self, file, tables):
 		"""
@@ -68,58 +45,68 @@ class DataBase:
 		"""
 		if not os.path.exists(file):
 			raise NameError("File '"+file+"' doesn't exist.")
-		in_doc	= True	# Boolean used to know if the line being read is in a documenting section or not
-		table	= {}	# used to store the table being read
+		in_doc	= False	# Boolean used to know if the line being read is in a documenting section or not
+		doc	= ""	# used to store the documentation of the table
 		query	= ""	# used to store the query definition of the table
 		file	= codecs.open(file,'r','utf8')
 		for line in file:
 			# si on est au début d'une partie de doc on sauve la derniere table lue
 			if re.match("--#", line) is not None and not in_doc:
-				tables.addTable(table, query)
+				if len(query) > 0:
+					tables.append({'doc':doc,'query':query})
 				in_doc	= True
-				table	= {}
+				doc	= ""
 				query	= ""
 			# si on est au début d'un espace de requete
 			elif re.match("--#", line) is None and in_doc:
 				in_doc	= False
 			# recherche du champ name dans la doc
 			if in_doc:
-				if self.isFirstLineOfField(line):
-					field_name		= self.getNameOfField(line)
-					table[field_name]	= self.getValueOfField(line)
-				else:
-					
-					table[field_name]	= table[field_name]+'\n'+self.getValueOfField(line)
-
-			# lecture de la requete
+				doc=doc+line
 			else:
-				query=query+'\n'+line
-				del field_name
+				query=query+line
 		# integration de la derniere table
-		tables.addTable(table)
+		if len(query) > 0:
+			tables.append({'doc':doc,'query':query})
 		file.close()
 		return tables
 
-	def isFirstLineOfField (self, line):
-		return re.match(u"--# @", line) is not None
-	def getNameOfField (self, line):
-		return line.replace(u"--# @", u"").split()[0]
-	def getValueOfField (self, line):
-		return re.sub(u"--# @.*? ", '', line)
-
-
 class TableDoc:
 	"""
-	Classe utilisée pour la représentation des définitions de table
+	Class used for the representation of tables (doc if exist and query)
+	"""
+	
+	def __init__(self, description):
+		doc	= self.parseDoc(description['doc'])
+		query	= description['query'] 
 
-	--> contient tous les attributs possibles (avec éventuellement des valeurs None) :
-	titre, description, dependances, requête"""
-	
-	def __init__(self, titre,description,dependances,champs,requete):
-		self.titre=titre		# chaine de caracteres, titre dans l'aide
-		self.description=description	# chaine de caracteres, descriptions detaillees
-		self.dependances=dependances	# dictionnaire contenant en clé les noms des namespace
-						# et en valeur une liste avec les tables
-		self.champs=champs		# dictionnaire, cle=nom, valeur=type (?)
-		self.requete=requete
-	
+	def parseDoc(self, doc):
+		# if doc is empty, welle there's nothing to do
+		if len(doc) == 0:
+			return ''
+
+		# A well structured doc string may have "\n",
+		# a field may be constituted of several lines begining with "--#".
+		# Let suppress them.
+		# Every field of the documentation should start with "--# @", so 
+		# the string doc is split on this string
+
+		doc = [re.sub("--#", "", x) for x in doc.replace('\n', '').split('--# @')]
+		doc = [x for x in doc if x != ""]
+
+		# transforming each doc's field in dictionnary (the first part of the string,
+		# before the first " ", should be the name)
+
+		doc = [{'name':x,'value':y} for (x,y) in [z.split(' ', 1) for z in doc]]
+		
+		# for each 'name' defined, values are grouped
+
+		# for each 'name', the possibility to use it is check
+		# and the coherence between real number of values and 
+		# authorized number of values is also checked (error or warn ans continu ?)
+		# Those informations are given in the docDefDB.sql
+
+		# for each field, the number of args is checked
+
+		# finally the 'doc' structure is returned
+		
