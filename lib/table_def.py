@@ -3,13 +3,19 @@
 # imports
 import sys, os, string, re, codecs
 
-TODO : ne pas traiter les repertoires et fichiers cachés
 
+# TODO : gérer les champs qui peuvent être plusieurs ... (genre field :)  )
+# TODO : ne pas traiter les repertoires et fichiers cachés
+# TODO : créer un .log pour que quand ça plante on puisse suivre ce qui se passe
 
 class DataBase:
-	"""Class containing TableDoc describing every tables of the database."""
+	"""
+	Class containing TableDoc describing every tables of the database.
+	"""
 	def __init__(self,root):
-		"""root is the path to the root of the documenting tree"""
+		"""
+		root is the path to the root of the documenting tree
+		"""
 		if not os.path.isdir(root):
 			raise NameError(root+" is not defined")
 		# list of all subdirectories
@@ -27,7 +33,9 @@ class DataBase:
 
 
 	def readTables(self, file, tables):
-		"""Extract all tables from file and add them to tables"""
+		"""
+		Extract all tables from file and add them to tables
+		"""
 		if not os.path.exists(file):
 			raise NameError("File '"+file+"' doesn't exist.")
 		in_doc=False		# lors du parcours du fichier, permet de savoir si le curseur
@@ -50,9 +58,11 @@ class DataBase:
 			# recherche du champ name dans la doc
 			if in_doc:
 				if self.isFirstLineOfField(line):
-					table[self.getNameOfField(line)]=self.getValueOfField(line)
+					field_name=self.getNameOfField(line)
+					table[field_name]=self.getValueOfField(line)
 				else:
-					table[self.getNameOfField(line)]=table[self.getNameOfField(line)]+'\n'+self.getValueOfField(line)
+					tmp=table[field_name]
+					table[field_name]=tmp+'\n'+self.getValueOfField(line)
 			# lecture de la requete
 			else:
 				query=query+'\n'+line
@@ -73,10 +83,11 @@ class DataBase:
 
 
 class TableDoc:
-	"""Classe utilisée pour la représentation des définitions de table\n\
-\n\
---> contient tous les attributs possibles (avec éventuellement des valeurs None) :\n\
-titre, description, dependances, requête"""
+	"""
+	Classe utilisée pour la représentation des définitions de table\n\
+	\n\
+	--> contient tous les attributs possibles (avec éventuellement des valeurs None) :\n\
+	titre, description, dependances, requête"""
 	
 	def __init__(self, titre,description,dependances,champs,requete):
 		self.titre=titre		# chaine de caracteres, titre dans l'aide
@@ -86,15 +97,3 @@ titre, description, dependances, requête"""
 		self.champs=champs		# dictionnaire, cle=nom, valeur=type (?)
 		self.requete=requete
 	
-if __name__ == "__main__":
-	# lister les fichiers
-	path = sys.argv[1]
-	new_path = string.replace(path, 'sql', 'LaTeX')
-	if not os.path.isdir(new_path):
-		os.makedirs(new_path)
-	# lire les fichiers
-
-	import sys, os, string, re
-	from table_def import DataBase
-	root="/atmo/SIG/script/python/"
-	test=DataBase(root)
