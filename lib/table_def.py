@@ -78,7 +78,10 @@ class TableDoc:
 	
 	def __init__(self, description):
 		doc	= self.parseDoc(description['doc'])
-		query	= description['query'] 
+		query	= self.parseQuery(description['query'])
+
+		# when parsing query will be implemented, don't
+		# forget to check coherence between doc and query
 
 	def parseDoc(self, doc):
 		# if doc is empty, welle there's nothing to do
@@ -101,12 +104,22 @@ class TableDoc:
 		
 		# for each 'name' defined, values are grouped
 
+
+
 		# for each 'name', the possibility to use it is check
 		# and the coherence between real number of values and 
 		# authorized number of values is also checked (error or warn ans continu ?)
 		# Those informations are given in the docDefDB.sql
 
+		docDefDB= sqlite3.connect(postdoc.docDefDB)
+		c	= docDefDB.cursor()
+		c.execute("select * from doc_fields")
+		authorizedFields = c.fetchall()
+
 		# for each field, the number of args is checked
 
 		# finally the 'doc' structure is returned
 		
+	def parseQuery(self, query):
+		# will need a sqlparser ...
+		return query
