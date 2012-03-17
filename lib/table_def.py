@@ -111,7 +111,7 @@ class TableDoc:
 		# authorized number of values is also checked (error or warn ans continu ?)
 		# Those informations are given in the docDefDB.sql
 
-		docDefDB= sqlite3.connect(postdoc.docDefDB)
+		docDefDB= sqlite3.connect(docgreSQL.docDefDB)
 		c	= docDefDB.cursor()
 		c.execute("select * from doc_fields")
 		authorizedFields = c.fetchall()
