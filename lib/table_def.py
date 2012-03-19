@@ -9,7 +9,7 @@ class DataBase:
 	"""
 	Class containing TableDoc describing every tables of the database.
 	"""
-	def __init__(self,root):
+	def __init__(self,root, docgreSQL):
 		"""
 		root is the path to the root of the documenting tree
 		"""
@@ -35,7 +35,7 @@ class DataBase:
 			self.tablesDoc=self.readTables(file, self.tablesDoc)
 
 		# format tablesDoc accordingly with what is in tablesDoc
-		self.tablesDoc = [TableDoc(description) for in self.tablesDoc]
+		self.tablesDoc = [TableDoc(description, docgreSQL) for description in self.tablesDoc]
 
 		# complétion des inheritances mais avant de faire ça, il faudra faire du parsing de requete...
 
@@ -76,14 +76,14 @@ class TableDoc:
 	Class used for the representation of tables (doc if exist and query)
 	"""
 	
-	def __init__(self, description):
-		doc	= self.parseDoc(description['doc'])
+	def __init__(self, description, docgreSQL):
+		doc	= self.parseDoc(description['doc'], docgreSQL)
 		query	= self.parseQuery(description['query'])
 
 		# when parsing query will be implemented, don't
 		# forget to check coherence between doc and query
 
-	def parseDoc(self, doc):
+	def parseDoc(self, doc, docgreSQL):
 		# if doc is empty, welle there's nothing to do
 		if len(doc) == 0:
 			return ''
@@ -100,11 +100,17 @@ class TableDoc:
 		# transforming each doc's field in dictionnary (the first part of the string,
 		# before the first " ", should be the name)
 
-		doc = [{'name':x,'value':y} for (x,y) in [z.split(' ', 1) for z in doc]]
-		
+		doc = {'key':[x for (x,y) in [z.split(' ', 1) for z in doc]] ,
+				'value':[y for  (x,y) in [z.split(' ', 1) for z in doc]]}
+
 		# for each 'name' defined, values are grouped
 
-
+		definedFields = set (doc['key'])
+		for df in definedFields :
+			doc[df] = [doc['value'][i] for i in range(len(doc['key'])) if doc['key'][i]==df]
+		del doc['key']
+		del doc['value']
+		del definedFields
 
 		# for each 'name', the possibility to use it is check
 		# and the coherence between real number of values and 
@@ -114,7 +120,18 @@ class TableDoc:
 		docDefDB= sqlite3.connect(docgreSQL.docDefDB)
 		c	= docDefDB.cursor()
 		c.execute("select * from doc_fields")
-		authorizedFields = c.fetchall()
+		tmp = c.fetchall()
+		authorizedFields = {}
+		for i in tmp:
+			authorizedFields[i[0]] = i[1]
+		del tmp
+		for f in doc.keys():
+			if f not in authorizedFields.keys():
+				print f+' is not an authorized field name and so will be ignored.'
+				del doc[f]
+			elif len(doc[f]) > 1 and authorizedFields[f] == u'False':
+				print 'Only one value is required for the "'+f+'" field. "'+doc[f][0]+'" is kept.'
+				doc[f] = doc[f][0]
 
 		# for each field, the number of args is checked
 
