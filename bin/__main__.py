@@ -3,8 +3,8 @@
 
 import sys, os, string, re, codecs
 sys.path.append("/home/vladislav/src/docgreSQL/lib/")
-from docgreSQL import DocGreSQL
-from table_def import *
+#from docgreSQL import DocGreSQL
+from dataBase import *
 
 docgreSQL=DocGreSQL("/home/vladislav/src/docgreSQL/")
 root="/home/vladislav/src/docgreSQL/test/"
