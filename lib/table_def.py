@@ -108,6 +108,7 @@ class TableDoc:
 		definedFields = set (doc['key'])
 		for df in definedFields :
 			doc[df] = [doc['value'][i] for i in range(len(doc['key'])) if doc['key'][i]==df]
+
 		del doc['key']
 		del doc['value']
 		del definedFields
@@ -117,26 +118,57 @@ class TableDoc:
 		# authorized number of values is also checked (error or warn ans continu ?)
 		# Those informations are given in the docDefDB.sql
 
-		docDefDB= sqlite3.connect(docgreSQL.docDefDB)
-		c	= docDefDB.cursor()
-		c.execute("select * from doc_fields")
-		tmp = c.fetchall()
-		authorizedFields = {}
-		for i in tmp:
-			authorizedFields[i[0]] = i[1]
-		del tmp
+		docDefDB = DocDefDB (docgreSQL.docDefDB)
+
+		authorizedFields = docDefDB.authorizedFields()
+
 		for f in doc.keys():
 			if f not in authorizedFields.keys():
 				print f+' is not an authorized field name and so will be ignored.'
+
 				del doc[f]
+
 			elif len(doc[f]) > 1 and authorizedFields[f] == u'False':
 				print 'Only one value is required for the "'+f+'" field. "'+doc[f][0]+'" is kept.'
 				doc[f] = doc[f][0]
 
+		del authorizedFields
+
 		# for each field, the number of args is checked
+
+		fieldArgs = docDefDB.fieldArgs()
 
 		# finally the 'doc' structure is returned
 		
 	def parseQuery(self, query):
 		# will need a sqlparser ...
 		return query
+	
+class DocDefDB:
+	'''
+	Class defining a connection to the sqlite db
+	where some rules of definition are set'''
+	def __init__(self, file):
+		self.docDefDB=sqlite3.connect(file)
+	def authorizedFields (self):
+		c = self.docDefDB.cursor()
+		c.execute("select * from doc_fields")
+		tmp = c.fetchall()
+		authorizedFields = {}
+		for i in tmp:
+			authorizedFields[i[0]] = i[1]
+		del c,tmp
+		return authorizedFields
+	def fieldArgs (self):
+		c = self.docDefDB.cursor()
+		c.execute("select * from doc_field_args")
+		tmp = c.fetchall()
+		fieldArgs = {}
+		for i in tmp:
+			if i[0] in fieldArgs.keys():
+				fieldArgs[i[0]].append(i[1])
+			else:
+				fieldArgs[i[0]] = [i[1]]
+		del tmp,c
+		return fieldArgs
+
