@@ -77,8 +77,10 @@ class TableDoc:
 	"""
 	
 	def __init__(self, description, docgreSQL):
-		doc	= self.parseDoc(description['doc'], docgreSQL)
-		query	= self.parseQuery(description['query'])
+		self.doc	= self.parseDoc(description['doc'], docgreSQL)
+		self.query	= self.parseQuery(description['query'])
+
+		# check consistency : are all dependencies available ?
 
 		# when parsing query will be implemented, don't
 		# forget to check coherence between doc and query
@@ -87,6 +89,8 @@ class TableDoc:
 		# if doc is empty, welle there's nothing to do
 		if len(doc) == 0:
 			return ''
+
+		docDefDB = DocDefDB (docgreSQL.docDefDB)
 
 		# A well structured doc string may have "\n",
 		# a field may be constituted of several lines begining with "--#".
@@ -118,16 +122,12 @@ class TableDoc:
 		# authorized number of values is also checked (error or warn ans continu ?)
 		# Those informations are given in the docDefDB.sql
 
-		docDefDB = DocDefDB (docgreSQL.docDefDB)
-
 		authorizedFields = docDefDB.authorizedFields()
 
 		for f in doc.keys():
 			if f not in authorizedFields.keys():
 				print f+' is not an authorized field name and so will be ignored.'
-
 				del doc[f]
-
 			elif len(doc[f]) > 1 and authorizedFields[f] == u'False':
 				print 'Only one value is required for the "'+f+'" field. "'+doc[f][0]+'" is kept.'
 				doc[f] = doc[f][0]
@@ -135,10 +135,24 @@ class TableDoc:
 		del authorizedFields
 
 		# for each field, the number of args is checked
+		# the 'doc' structure is created at the same time
 
 		fieldArgs = docDefDB.fieldArgs()
 
-		# finally the 'doc' structure is returned
+		for f in doc.keys():
+			# number of fields
+			nf = len(fieldArgs[f])
+			for ff in range(len(doc[f])):
+				if nf > 1:
+					doc[f][ff] = doc[f][ff].split(' ', nf-1)
+					if len (doc[f][ff]) != nf:
+						raise NameError('One field is missing for '+' '.join(doc[f][ff]))
+				else:
+					doc[f][ff] = [doc[f][ff]]
+
+		del nf
+		return doc
+
 		
 	def parseQuery(self, query):
 		# will need a sqlparser ...
