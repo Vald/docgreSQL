@@ -1,23 +1,38 @@
 #! /usr/bin/env python
 # encoding: utf-8
 
-import string
+import string, re
 from docgreSQL import *
 from docDefDB import *
 
 class TableDoc:
 	"""
 	Class used for the representation of tables (doc if exist and query)
+
+	Slots:
+	'doc' is a dictionnary containing all documenting fieldsin the format :
+		nameOfField : <list>
+		where <list> contains one or more elements (depending on what is defined
+		in docDefDB). Each element is (also) a list containing
+		the parameters used for the documentation of the field.
+	'query' is a string containing the query(ies) used to build the table.
+		Later, it will be a structure containing (a) parsed query(ies).
 	"""
 	
 	def __init__(self, description, docgreSQL):
 		self.doc	= self.parseDoc(description['doc'], docgreSQL)
 		self.query	= self.parseQuery(description['query'])
 
-		# check consistency : are all dependencies available ?
-
 		# when parsing query will be implemented, don't
 		# forget to check coherence between doc and query
+
+	def __str__(self):
+		pretty=''
+		for field in self.doc.keys():
+			pretty=pretty+(unicode(field)+' :\n')
+			pretty=pretty+'\n'.join(['\t'+' - '.join(x) for x in self.doc[field]])+'\n'
+		pretty=pretty+'\n'
+		return unicode(pretty).encode('utf-8')
 
 	def parseDoc(self, doc, docgreSQL):
 		# if doc is empty, welle there's nothing to do
