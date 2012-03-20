@@ -14,7 +14,7 @@ class DocGreSQL:
 		self.root=root
 		config=ConfigParser.SafeConfigParser()
 		config.read('docgreSQL.ini')
-		self.docDefDB=config.get('files', 'docDefDB').replace('./', self.root, 1)
+		self.docDefDB=config.get('files', 'docDefDB').replace('./', self.root+'/', 1)
 
 
 if __name__ == "__main__":

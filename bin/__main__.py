@@ -2,16 +2,17 @@
 # encoding: utf-8
 
 import sys, os, string, re, codecs
-sys.path.append("/home/vladislav/src/docgreSQL/lib/")
+
+sys.path.append(os.getcwd()+"/lib/")
 #from docgreSQL import DocGreSQL
 from dataBase import *
 
-docgreSQL=DocGreSQL("/home/vladislav/src/docgreSQL/")
-root="/home/vladislav/src/docgreSQL/test/"
+docgreSQL=DocGreSQL(os.getcwd())
+root=os.getcwd()+"/test/"
 test=DataBase(root, docgreSQL)
 
 self=test
-file="/home/vladislav/src/docgreSQL/test/commune.sql"
+file=os.getcwd()+"/test/commune.sql"
 tablesDoc=[]
 self.tablesDoc = self.readTables(file, tablesDoc)
 description = self.tablesDoc[0]
