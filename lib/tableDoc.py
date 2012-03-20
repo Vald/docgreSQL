@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # encoding: utf-8
 
-import string, re
+import string, re, sqlparse
 from docgreSQL import *
 from docDefDB import *
 
@@ -104,7 +104,9 @@ class TableDoc:
 
 		
 	def parseQuery(self, query):
-		# will need a sqlparser ...
+		query=query.replace('\n', '')
+		queries = sqlparse.split(query)
+		qParsed = [sqlparse.parse(x) for x in queries]
 		return query
 	
 
