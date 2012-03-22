@@ -8,12 +8,12 @@ class DocGreSQL:
 	This the main class of the program.
 
 	It defines links between the program and the reste of the world
-	such as defined in the docgreSQL.ini at the root of the project.
+	such as defined in the setup.cfg at the root of the project.
 	"""
 	def __init__(self, root):
 		self.root=root
 		config=ConfigParser.SafeConfigParser()
-		config.read('docgreSQL.ini')
+		config.read('setup.cfg')
 		self.docDefDB=config.get('files', 'docDefDB').replace('./', self.root+'/', 1)
 
 
